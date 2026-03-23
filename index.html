@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="VexIO">
 <link rel="manifest" href="data:application/json,{%22name%22:%22VexIO%22,%22short_name%22:%22VexIO%22,%22start_url%22:%22/%22,%22display%22:%22standalone%22,%22background_color%22:%22%230a0e1a%22,%22theme_color%22:%22%233b82f6%22,%22icons%22:[{%22src%22:%22data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%233b82f6'/%3E%3Ctext y='.9em' font-size='80' x='10'%3EDB%3C/text%3E%3C/svg%3E%22,%22sizes%22:%22any%22,%22type%22:%22image/svg+xml%22}]}">
-<title>VexIO — Yönetim Sistemi</title>
+<title>VexIO DEMO — Yönetim Sistemi</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet">
@@ -295,6 +295,7 @@ tr:hover td{background:rgba(255,255,255,.02)}
 </style>
 </head>
 <body>
+<div id="demoRibbon" style="position:fixed;top:20px;right:-38px;z-index:99999;background:#F59E0B;color:#0D1B2A;font-size:11px;font-weight:800;padding:5px 48px;transform:rotate(45deg);letter-spacing:.1em;pointer-events:none;box-shadow:0 2px 8px rgba(0,0,0,.35)">DEMO</div>
 <div class="upload-progress-wrap" id="uploadProgressWrap"></div>
 
 <!-- ═══ GİRİŞ ═══ -->
@@ -314,6 +315,11 @@ tr:hover td{background:rgba(255,255,255,.02)}
     <div class="login-sub" id="lsub">Hesabınıza giriş yapın</div>
     <div class="err" id="lErr"></div>
 
+    <div id="demoBanner" style="background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);border-radius:10px;padding:12px 14px;margin-bottom:16px;font-size:12px;color:#F59E0B;line-height:1.65">
+      <b>🎯 Demo Ortamı</b><br>
+      Size iletilen demo hesabı bilgileriyle giriş yapın.<br>
+      Tüm değişiklikler bu demo ortamına kaydedilir.
+    </div>
     <div id="fLogin">
       <div class="form-group"><label class="form-label">E-posta</label><input class="form-input" id="lEmail" type="email" placeholder="ad@sirket.com"></div>
       <div class="form-group"><label class="form-label">Şifre</label><input class="form-input" id="lPass" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"></div>
@@ -424,7 +430,8 @@ tr:hover td{background:rgba(255,255,255,.02)}
           <div class="ur" id="uRole">—</div>
         </div>
       </div>
-      <button class="btn btn-ghost btn-sm btn-full" style="margin-top:6px" onclick="doLogout()">Çıkış Yap</button>
+      <button class="btn btn-ghost btn-sm btn-full" style="margin-top:6px" onclick="doLogout()">🚪 Çıkış Yap</button>
+      <button class="btn btn-sm btn-full" onclick="confirmDemoReset()" style="margin-top:4px;background:rgba(245,158,11,.12);color:#F59E0B;border:1px solid rgba(245,158,11,.3);font-size:11px">🔄 Demo Sıfırla</button>
     </div>
     <div class="collapse-btn" id="colBtn" onclick="toggleSidebar()">◀</div>
   </nav>
@@ -1825,6 +1832,56 @@ const ROLE_TR = { admin:'Sistem Yöneticisi', manager:'Proje Yöneticisi', sales
 // ═══════════════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════════════
+// ═══════════════════════════════════════════════
+// DEMO RESET SİSTEMİ
+// ═══════════════════════════════════════════════
+const DEMO_TABLES = [
+  'commercial_records','crm_interactions','crm_leads',
+  'processes','projects','customers','products',
+  'stock_movements','events','meetings','tasks',
+  'activity_log','comments','partner_price_lists'
+];
+
+function confirmDemoReset() {
+  const modal = document.createElement('div');
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:9999;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px)';
+  modal.innerHTML = `
+    <div style="background:#132040;border:1px solid rgba(245,158,11,.4);border-radius:16px;padding:28px;max-width:400px;width:90%;text-align:center">
+      <div style="font-size:36px;margin-bottom:12px">🔄</div>
+      <div style="font-size:17px;font-weight:700;margin-bottom:8px;color:#fff">Demo Verisini Sıfırla</div>
+      <div style="font-size:13px;color:#CBD5E1;line-height:1.6;margin-bottom:22px">
+        Tüm demo verileri (projeler, müşteriler, stok, lead vb.) silinecek.<br>
+        <b style="color:#F59E0B">Bu işlem geri alınamaz.</b>
+      </div>
+      <div style="display:flex;gap:10px;justify-content:center">
+        <button onclick="this.closest('div[style]').remove()" style="padding:10px 22px;border-radius:8px;border:1px solid rgba(255,255,255,.2);background:transparent;color:#fff;cursor:pointer;font-size:14px">İptal</button>
+        <button onclick="runDemoReset(this)" style="padding:10px 22px;border-radius:8px;border:none;background:#F59E0B;color:#0D1B2A;cursor:pointer;font-size:14px;font-weight:700">Evet, Sıfırla</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+}
+
+async function runDemoReset(btn) {
+  btn.textContent = '⏳ Sıfırlanıyor...';
+  btn.disabled = true;
+  let errors = 0;
+  for (const table of DEMO_TABLES) {
+    try {
+      // Delete all rows where id is not null (= all rows)
+      const { error } = await sb.from(table).delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      if (error) errors++;
+    } catch(e) { errors++; }
+  }
+  document.querySelector('div[style*="inset:0"]')?.remove();
+  if (errors === 0) {
+    showNotif('✅ Demo sıfırlandı! Tüm veriler temizlendi.', 'ok');
+  } else {
+    showNotif('⚠️ Sıfırlama tamamlandı, bazı tablolarda hata oluştu.', 'ok');
+  }
+  // Reload current page
+  setTimeout(() => navigate(document.querySelector(`.nav-item[data-page="${currentPage}"]`)), 800);
+}
+
 window.onload = () => {
   // Apply saved theme immediately
   const savedTheme = localStorage.getItem('vexio-theme') || 'dark';
@@ -1835,8 +1892,8 @@ window.onload = () => {
     const lb = document.getElementById('langBtnLogin');
     if(lb) lb.textContent = '🇬🇧';
   }
-  const url = 'https://srvbecdjsgscntlnppxj.supabase.co';
-  const key = 'sb_publishable_Oo5VaAG6uACAsfuBBIZnmQ_LVPzbqhg';
+  const url = 'https://szduphwturvmobanzueq.supabase.co';
+  const key = 'sb_publishable__iPkkZnRFg9NprTl1duccQ_Hyh1uMg7';
   initSupabase(url, key);
 };
 
