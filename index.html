@@ -1996,7 +1996,7 @@ function showApp() {
   // Apply role permissions after short delay (ensure nav is ready)
   setTimeout(()=>{ try{ applyPermissions(); } catch(e){} }, 500);
   // Check if user needs admin approval
-  checkUserApproval();
+  // checkUserApproval();
   // Check notifications every 5 minutes
   checkSystemNotifications();
   setInterval(checkSystemNotifications, 300000);
